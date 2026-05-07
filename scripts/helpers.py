@@ -17,6 +17,25 @@ DEFAULT_THRESHOLDS = {
     "min_spend_for_flag": 50.0,
 }
 
+# Date presets aceptados por `meta ads insights get --date-preset`
+PERIOD_PRESETS = {
+    "today", "yesterday", "last_3d", "last_7d", "last_14d", "last_30d",
+    "last_90d", "this_month", "last_month",
+}
+
+
+def normalize_period(period):
+    """Acepta '7d', '14d', '30d' y devuelve 'last_Nd'. Acepta presets directamente."""
+    if not period:
+        return None
+    if period in PERIOD_PRESETS:
+        return period
+    if period.endswith("d") and period[:-1].isdigit():
+        candidate = f"last_{period}"
+        if candidate in PERIOD_PRESETS:
+            return candidate
+    return period  # deja que el CLI complain si no es válido
+
 
 def _load_config():
     path = PROJECT_DIR / "accounts.yaml"

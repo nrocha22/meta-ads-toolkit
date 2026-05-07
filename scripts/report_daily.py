@@ -20,7 +20,8 @@ def get_insights_for_campaign(campaign_id, preset):
 
 def main():
     args = strip_account_flag(sys.argv)
-    preset = args[0] if args else "yesterday"
+    from helpers import normalize_period
+    preset = normalize_period(args[0]) if args else "yesterday"
     acct = get_account()
 
     campaigns = run_meta("campaign", "list")

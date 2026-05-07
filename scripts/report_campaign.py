@@ -61,7 +61,8 @@ def main():
         sys.exit(0)
 
     campaign_id = args[0]
-    preset = args[1] if len(args) > 1 else "last_30d"
+    from helpers import normalize_period
+    preset = normalize_period(args[1]) if len(args) > 1 else "last_30d"
     acct = get_account()
     cur = acct["currency"]
 

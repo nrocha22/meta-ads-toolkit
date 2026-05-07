@@ -34,7 +34,8 @@ def format_budget(campaign, cur):
 
 def main():
     args = strip_account_flag(sys.argv)
-    preset = args[0] if args else "last_7d"
+    from helpers import normalize_period
+    preset = normalize_period(args[0]) if args else "last_7d"
     acct = get_account()
 
     campaigns = get_active_campaigns()

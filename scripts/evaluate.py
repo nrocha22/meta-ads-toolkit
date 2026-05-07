@@ -4,7 +4,7 @@
 import json
 import sys
 import time
-from helpers import run_meta, get_account, get_thresholds, ACCOUNTS
+from helpers import run_meta, get_account, get_thresholds, normalize_period, ACCOUNTS
 from _cache import cache_get, cache_set
 
 # Mapeo de acción de conversión por tipo de campaña
@@ -204,7 +204,7 @@ def main():
                 break
         account_key = account_key or "default"
     currency = acct["currency"]
-    period = args[0] if args else "last_14d"
+    period = normalize_period(args[0]) if args else "last_14d"
 
     sys.stderr.write(f"Evaluando ads activos — {acct['label']} ({period})...\n")
     if _CACHE_ENABLED:
