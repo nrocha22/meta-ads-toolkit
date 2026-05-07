@@ -101,7 +101,7 @@ def main():
 
     if not ad_ids:
         print("Uso: python pause_ads.py --account <name> [--yes] <AD_ID> [AD_ID...]")
-        print("     python evaluate.py --account <name> | python pause_ads.py --account rd")
+        print("     python evaluate.py --account <name> | python pause_ads.py --account <name>")
         sys.exit(1)
 
     # Fetch info de cada ad

@@ -23,7 +23,7 @@ adset:
   is_dynamic_creative: false
 
   targeting:
-    countries: [XX]                               # ISO-3166: US, MX, CO, MX, etc.
+    countries: [XX]                               # ISO-3166 (ej. US, GB, MX)
     custom_locations:                             # Lat/lng + radio en millas
       - {lat: 0.0, lng: 0.0, radius_mi: 10, country: XX}
     excluded_geo_locations:                       # Misma estructura que arriba

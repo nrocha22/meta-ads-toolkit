@@ -329,7 +329,7 @@ def create_ad(adset_id, creative_id, name, status="PAUSED"):
 
 def main():
     parser = argparse.ArgumentParser(description="Crear ad en adset existente (PAUSED)")
-    parser.add_argument("--account", default=None, help="rd o peru")
+    parser.add_argument("--account", default=None, help="Nombre de cuenta declarado en accounts.yaml")
     parser.add_argument("--adset-id", required=True, help="ID del adset existente (obligatorio)")
     parser.add_argument("--template", default=None, help="Template para defaults (ej: leads)")
     parser.add_argument("--video-id", action="append", default=None, help="Video ID ya subido a Meta (repetir para DCO). Usar upload_video.py primero.")
