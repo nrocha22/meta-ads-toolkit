@@ -62,7 +62,43 @@ Sube via Graph API, espera procesamiento (~10-30s), devuelve JSON con `video_id`
 
 ---
 
-## 4. Crear ad
+## 4. Crear ad set (con targeting completo)
+
+```bash
+# Dry-run primero (preview del payload sin POST)
+python3 scripts/create_adset.py --account mibrand \
+  --campaign-id <CAMPAIGN_ID> \
+  --template templates/leads.example.yaml \
+  --name "Web Leads — Bogota" \
+  --daily-budget 5000 \
+  --dry-run
+
+# Crear de verdad (queda en PAUSED)
+python3 scripts/create_adset.py --account mibrand \
+  --campaign-id <CAMPAIGN_ID> \
+  --template templates/leads.example.yaml \
+  --name "Web Leads — Bogota" \
+  --daily-budget 5000
+```
+
+Soporta targeting completo vía Graph API directa (no posible con `meta ads ad-set create`):
+- `geo_locations`: countries + custom_locations (lat/lng + radio en millas)
+- `excluded_geo_locations`
+- `age_min`, `age_max`, género, locales
+- `custom_audiences`, `excluded_custom_audiences`, `flexible_spec`
+- `targeting_optimization` (Advantage audience)
+- `promoted_object` (pixel + custom_event_type, o page_id para WhatsApp)
+- `destination_type` (WEBSITE, WHATSAPP, MESSENGER, ON_AD)
+- `attribution_spec` parseable de strings tipo `"click_7d_view_1d"`
+- `is_dynamic_creative`
+
+Budget en **minor units** de la moneda de la cuenta (USD/EUR/PEN cents, COP/JPY raw). Log en `logs/created_adsets.log`.
+
+`page_id`, `pixel_id`, `instagram_user_id` se toman de `accounts.yaml` — el template no los duplica.
+
+---
+
+## 5. Crear ad
 
 ```bash
 # Single creative simple
@@ -121,6 +157,6 @@ meta ads ad update <AD_ID> --status ACTIVE
 ## Notas
 
 - **Rate limiting**: ~30 calls en ráfaga = bloqueo de ~10 min. `evaluate.py` incluye delays + cache local.
-- **Adset ID**: los ads se crean dentro de adsets existentes (el CLI no soporta targeting completo para crear adsets nuevos vía Graph API es future work).
+- **Adset ID**: para targeting completo al crear adsets, usar `create_adset.py` (Graph API directa). El CLI oficial solo soporta `--targeting-countries`.
 - **`--account`**: nombre declarado en `accounts.yaml`. Default: primera entrada.
 - **Convención**: tabla a stderr, JSON a stdout. Exit code 0=OK, 1=error, 2=sin datos.

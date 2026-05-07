@@ -15,6 +15,7 @@ El Meta Ads CLI oficial cubre el CRUD básico (crear/listar/actualizar campañas
 | Evaluar ads activos con scoring | `scripts/evaluate.py` — ranking eficiencia (CPL) + volumen, output JSON pipe-able |
 | Pausar ads en lote con preview | `scripts/pause_ads.py` — confirmación + log |
 | Subir videos a la library | `scripts/upload_video.py` — Graph API directa con espera de procesamiento |
+| Crear ad sets con targeting completo (edad, género, geo radius, custom audiences) | `scripts/create_adset.py` — Graph API directa (el CLI solo soporta `--targeting-countries`) |
 | Crear ads con Asset Customization Rules | `scripts/create_ad.py --placement-customization` — patrón Andromeda (video por placement) |
 | Crear ads con `descriptions[]` | `scripts/create_ad.py --description` (repetible) |
 | Rate limiting en evaluación | Cache local con TTL en `evaluate.py` |
@@ -23,7 +24,6 @@ El Meta Ads CLI oficial cubre el CRUD básico (crear/listar/actualizar campañas
 
 **Lo que NO cubre (todavía)**:
 
-- Crear ad sets con targeting demográfico completo (edad, género, geo radius, custom audiences). El CLI solo soporta `--targeting-countries`. Para esto hace falta `create_adset.py` vía Graph API directa — está en la roadmap.
 - Activar el WhatsApp browser add-on (`message_extensions`) requiere capability `whatsapp_business_management` aprobada en tu app. Ver `docs/whatsapp-browser-addon.md`.
 
 ---
@@ -145,6 +145,7 @@ meta-ads-toolkit/
 │   ├── evaluate.py           # Ranking con cache
 │   ├── pause_ads.py
 │   ├── upload_video.py
+│   ├── create_adset.py       # Graph API: targeting completo
 │   ├── create_ad.py          # Graph API: descriptions, placement-customization
 │   └── research_*.py
 └── templates/
@@ -165,9 +166,10 @@ meta-ads-toolkit/
 
 ## Roadmap
 
-- [ ] `create_adset.py` — adsets con targeting demográfico completo vía Graph API
 - [ ] `cleanup.py` — archivar campañas pausadas hace > N meses
 - [ ] Skills de Claude Code para flujos de gestión
+- [ ] Custom audiences sync desde CRM (Graph API)
+- [ ] CAPI (Conversions API) para eventos server-side
 
 PRs y issues bienvenidos.
 

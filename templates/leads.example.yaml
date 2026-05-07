@@ -1,36 +1,42 @@
 # Template — Web Leads (Pixel evento LEAD)
 #
-# Este YAML es referencia para configurar adsets en Ads Manager UI o como base
-# para un futuro `create_adset.py` programático. Copia este archivo, ajústalo a
-# tu cuenta y guárdalo en `templates/<nombre>.yaml` (los templates concretos no
-# se commitean; solo este `*.example.yaml` vive en el repo público).
+# Usage:
+#   python3 scripts/create_adset.py --account mibrand \
+#     --campaign-id <ID> --template templates/leads.example.yaml \
+#     --name "Web Leads — City" --daily-budget 5000
+#
+# `page_id`, `pixel_id`, `instagram_user_id` se toman de accounts.yaml por
+# nombre de cuenta — NO se duplican aquí.
 
-account: mibrand                                         # Nombre declarado en accounts.yaml
-page_id: "REEMPLAZAR_PAGE_ID"                            # Coincide con accounts.yaml
-link_url: "https://tu-landing.example.com/oferta"        # URL del landing del lead
+account: mibrand                                  # Informativo; el flag --account es lo que cuenta
 
 campaign:
   objective: OUTCOME_LEADS
-  special_ad_categories: []                              # Housing/credit/employment/politics si aplica
   bid_strategy: LOWEST_COST_WITHOUT_CAP
+  special_ad_categories: []                       # Housing/credit/employment/politics si aplica
 
 adset:
-  optimization_goal: OFFSITE_CONVERSIONS                 # OFFSITE_CONVERSIONS para web leads
+  optimization_goal: OFFSITE_CONVERSIONS          # OFFSITE_CONVERSIONS para web pixel leads
   billing_event: IMPRESSIONS
-  pixel_id: "REEMPLAZAR_PIXEL_ID"
-  custom_event_type: LEAD                                # Evento del Pixel a optimizar
-  attribution_setting: "click_7d_view_1d"
+  custom_event_type: LEAD                         # Evento del Pixel a optimizar (Pixel ID viene de accounts.yaml)
+  attribution_setting: "click_7d_view_1d"         # Parser: click_Nd / view_Nd encadenados
+  is_dynamic_creative: false
+
   targeting:
-    countries: [XX]                                      # Códigos ISO-3166: US, MX, CO, MX, etc.
-    geo_locations:                                       # Opcional — ciudades con radio en millas
-      - name: "Ciudad Principal"
-        radius_mi: 10
-    geo_exclusions: []                                   # Opcional — zonas a excluir
-    gender: all                                          # all | female | male
+    countries: [XX]                               # ISO-3166: US, MX, CO, MX, etc.
+    custom_locations:                             # Lat/lng + radio en millas
+      - {lat: 0.0, lng: 0.0, radius_mi: 10, country: XX}
+    excluded_geo_locations:                       # Misma estructura que arriba
+      countries: []
+      custom_locations: []
     age_min: 18
     age_max: 65
-    advantage_audience: true                             # Meta expande auto (excepto geo)
+    gender: all                                   # all | female | male
+    locales: []                                   # Códigos numéricos Meta (ej. [6] = Spanish)
+    advantage_audience: true                      # Meta expande targeting (excepto geo)
+    custom_audiences: []                          # IDs de audiencias a incluir
+    excluded_custom_audiences: []                 # IDs a excluir (ej: clientes existentes)
 
 creative:
-  format: video                                          # video | image | carousel
-  default_cta: CONTACT_US                                # CONTACT_US, LEARN_MORE, SHOP_NOW, etc.
+  format: video                                   # video | image | carousel
+  default_cta: CONTACT_US                         # CONTACT_US, LEARN_MORE, SHOP_NOW, etc.
