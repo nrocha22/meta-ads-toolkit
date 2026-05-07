@@ -86,6 +86,18 @@ Formato: solo dígitos (15-16 dígitos típicamente).
 - Asignada al mismo Business Manager que el ad account
 - Asignada al mismo System User con permiso "Create content"
 
+### Discovery automático (recomendado)
+
+Si tienes el `ad_account_id`, lista todas las Pages que pueden promocionar desde esa cuenta y rankéalas por fans + presencia de Instagram para identificar la principal:
+
+```bash
+curl -sG "https://graph.facebook.com/v21.0/<AD_ACCOUNT_ID>/promote_pages" \
+  -d "fields=id,name,fan_count,instagram_business_account{username,followers_count}" \
+  -d "access_token=$ACCESS_TOKEN" | python3 -m json.tool
+```
+
+Cuando una marca tiene múltiples Pages con el mismo nombre (común tras varios años de operación), la correcta suele ser la que tiene **más fans + Instagram linkeado**. Ejemplo real: una cuenta arrojó 6 Pages "Brand X" pero solo una tenía 65k+ fans y `@brand` en IG — esa era la activa.
+
 ---
 
 ## 4. Instagram Business User ID (opcional)
@@ -121,6 +133,18 @@ Formato: solo dígitos (15-16 dígitos).
 ### Cómo obtenerlo
 
 [Events Manager](https://business.facebook.com/events_manager) → seleccionar tu dataset → ID visible en la parte superior, o en la URL.
+
+### Discovery automático
+
+Lista los pixels asignados al ad account y su última actividad:
+
+```bash
+curl -sG "https://graph.facebook.com/v21.0/<AD_ACCOUNT_ID>/adspixels" \
+  -d "fields=id,name,last_fired_time" \
+  -d "access_token=$ACCESS_TOKEN" | python3 -m json.tool
+```
+
+El `last_fired_time` reciente confirma que el Pixel está activo y enviando eventos.
 
 Si no tienes Pixel:
 1. Events Manager → **Connect Data Sources** → **Web** → **Meta Pixel**
