@@ -16,9 +16,9 @@ BASE_URL = API_BASE_URL
 
 def load_template(account_key, template_name=None):
     """Carga template YAML para obtener page_id y link_url defaults."""
-    # Si no se especifica template, buscar el de leads por default
+    # Si no se especifica template, buscar el de leads por default (por convención: <account>_leads.yaml)
     if template_name is None:
-        template_name = f"{account_key}_leads"
+        template_name = f"{account_key}_leads" if account_key else "leads"
 
     template_path = PROJECT_DIR / "templates" / f"{template_name}.yaml"
     if not template_path.exists():
@@ -215,7 +215,7 @@ def create_creative_with_video_id(
     - Single video + 1 body + 1 title sin extras → object_story_spec.video_data simple.
 
     page_welcome_message: dict con la estructura del template de WhatsApp welcome
-    (ver templates/whatsapp_welcome.json). Para ads CTWA. Se serializa a JSON
+    (ver templates/whatsapp_welcome.example.json). Para ads CTWA. Se serializa a JSON
     string e inyecta en el lugar correcto según el modo:
     - asset_feed_spec mode: asset_feed_spec.additional_data.page_welcome_message
     - video_data mode: object_story_spec.video_data.page_welcome_message
@@ -345,14 +345,14 @@ def main():
     parser.add_argument("--name", required=True, help="Nombre del ad")
     parser.add_argument("--whatsapp-addon", action="store_true", help="Browser CTA add-on de WhatsApp (asset_feed_spec.message_extensions)")
     parser.add_argument("--placement-customization", action="store_true", help="Replicar patrón Andromeda: asset_customization_rules con feed-square + catch-all vertical (requiere --video-id, máx 2)")
-    parser.add_argument("--welcome-template", default=None, help="Path a archivo JSON con WhatsApp welcome message template (ej: templates/whatsapp_welcome.json). Para ads CTWA.")
+    parser.add_argument("--welcome-template", default=None, help="Path a archivo JSON con WhatsApp welcome message template. Para ads CTWA.")
     parser.add_argument("--yes", action="store_true", help="Skip confirmación")
 
     args = parser.parse_args()
 
     # Resolver cuenta
     acct = get_account(args.account)
-    account_key = args.account or None
+    account_key = args.account
     currency = acct["currency"]
 
     # Resolver defaults del template
