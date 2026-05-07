@@ -1,0 +1,36 @@
+# Template — Web Leads (Pixel evento LEAD)
+#
+# Este YAML es referencia para configurar adsets en Ads Manager UI o como base
+# para un futuro `create_adset.py` programático. Copia este archivo, ajústalo a
+# tu cuenta y guárdalo en `templates/<nombre>.yaml` (los templates concretos no
+# se commitean; solo este `*.example.yaml` vive en el repo público).
+
+account: mibrand                                         # Nombre declarado en accounts.yaml
+page_id: "REEMPLAZAR_PAGE_ID"                            # Coincide con accounts.yaml
+link_url: "https://tu-landing.example.com/oferta"        # URL del landing del lead
+
+campaign:
+  objective: OUTCOME_LEADS
+  special_ad_categories: []                              # Housing/credit/employment/politics si aplica
+  bid_strategy: LOWEST_COST_WITHOUT_CAP
+
+adset:
+  optimization_goal: OFFSITE_CONVERSIONS                 # OFFSITE_CONVERSIONS para web leads
+  billing_event: IMPRESSIONS
+  pixel_id: "REEMPLAZAR_PIXEL_ID"
+  custom_event_type: LEAD                                # Evento del Pixel a optimizar
+  attribution_setting: "click_7d_view_1d"
+  targeting:
+    countries: [XX]                                      # Códigos ISO-3166: US, MX, CO, MX, etc.
+    geo_locations:                                       # Opcional — ciudades con radio en millas
+      - name: "Ciudad Principal"
+        radius_mi: 10
+    geo_exclusions: []                                   # Opcional — zonas a excluir
+    gender: all                                          # all | female | male
+    age_min: 18
+    age_max: 65
+    advantage_audience: true                             # Meta expande auto (excepto geo)
+
+creative:
+  format: video                                          # video | image | carousel
+  default_cta: CONTACT_US                                # CONTACT_US, LEARN_MORE, SHOP_NOW, etc.

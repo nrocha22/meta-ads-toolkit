@@ -1,0 +1,28 @@
+# Secretos y configuración local — NUNCA commitear
+.env
+accounts.yaml
+
+# Cache de insights
+.cache/
+
+# Logs operacionales
+logs/
+
+# Videos descargados/subidos localmente
+videos/
+
+# Investigación / data privada
+research/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

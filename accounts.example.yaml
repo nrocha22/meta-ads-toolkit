@@ -1,0 +1,33 @@
+# Copia este archivo a accounts.yaml y rellena los IDs de tus cuentas.
+# accounts.yaml está en .gitignore — nunca lo commitees.
+#
+# Cada entrada bajo `accounts:` es una cuenta operable. El nombre de la entrada
+# (ej. `mibrand`) se usa con la flag `--account mibrand` en todos los scripts.
+#
+# Cómo obtener cada ID: ver docs/getting-started.md
+
+accounts:
+  mibrand:
+    ad_account_id: "act_XXXXXXXXXXXXXXX"   # `meta ads adaccount list`
+    page_id: "XXXXXXXXXXXXXXX"             # Page de Facebook que publica los ads
+    instagram_user_id: "XXXXXXXXXXXXXXX"   # Instagram Business actor (opcional)
+    pixel_id: "XXXXXXXXXXXXXXX"            # Pixel/dataset ID (Events Manager)
+    label: "Mi Brand"
+    currency: "$"
+
+  # Puedes agregar más cuentas (otros mercados, otros clientes):
+  # otracuenta:
+  #   ad_account_id: "act_..."
+  #   page_id: "..."
+  #   instagram_user_id: "..."
+  #   pixel_id: "..."
+  #   label: "Otra Cuenta"
+  #   currency: "$"
+
+# Thresholds para evaluate.py (opcional). Si una cuenta no tiene entrada acá,
+# se usan defaults conservadores. Calibra estos valores con datos reales tras
+# las primeras corridas.
+thresholds:
+  mibrand:
+    max_cpl: 12.00              # USD/lead aceptable
+    min_spend_for_flag: 50.0    # spend acumulado mínimo para marcar un ad como PAUSE? si tiene 0 conversiones

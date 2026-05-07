@@ -1,0 +1,35 @@
+# Template — WhatsApp Conversations (Click-to-WhatsApp Ads)
+#
+# Este YAML es referencia para configurar adsets en Ads Manager UI o como base
+# para un futuro `create_adset.py`. Copia este archivo, ajústalo a tu cuenta y
+# guárdalo en `templates/<nombre>.yaml`.
+
+account: mibrand                                         # Nombre declarado en accounts.yaml
+page_id: "REEMPLAZAR_PAGE_ID"                            # Page con WhatsApp Business linkeado
+
+campaign:
+  objective: OUTCOME_ENGAGEMENT
+  special_ad_categories: []
+  bid_strategy: LOWEST_COST_WITHOUT_CAP
+
+adset:
+  optimization_goal: CONVERSATIONS                       # NO usar OFFSITE_CONVERSIONS para WA
+  billing_event: IMPRESSIONS
+  destination_type: WHATSAPP                             # CLAVE: define que el ad va a WhatsApp
+  attribution_setting: "click_7d"
+  promoted_object:
+    page_id: "REEMPLAZAR_PAGE_ID"
+  targeting:
+    countries: [XX]
+    geo_locations:
+      - name: "Ciudad Principal"
+        radius_mi: 10
+    geo_exclusions: []
+    gender: all
+    age_min: 18
+    age_max: 65
+    advantage_audience: true
+
+creative:
+  format: video
+  default_cta: WHATSAPP_MESSAGE                          # CTA específico para CTWA
