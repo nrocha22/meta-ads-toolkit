@@ -1,0 +1,73 @@
+# Patrón "Andromeda" para Web Leads — refresh de campañas viejas
+#
+# Cuándo usarlo: cuando una campaña Web Leads (OUTCOME_LEADS / OFFSITE_CONVERSIONS
+# con pixel LEAD) ha corrido >12 meses y `check_drift.py` muestra ratio CPL
+# 90d/lifetime > 1.5×. Crear nueva campaña + adset + ads en lugar de editar lo
+# existente (cambios al targeting o creative resetean learning, y los creatives
+# son inmutables post-delivery).
+#
+# Diferencias clave vs config legacy:
+#   - advantage_audience: false explícito (campañas viejas suelen tenerlo en true)
+#   - sin age_range constraint (solo age_min/age_max)
+#   - geo simplificado (1 zona grande, no 5 micro-zonas con solape)
+#   - bid_strategy en adset (ABO, no CBO)
+#   - attribution 7d click + 1d view (estándar para web)
+#   - is_dynamic_creative: false (permite múltiples ads con creatives simples)
+#
+# Workflow:
+#   1) Crear campaña vía Graph API directa (POST /act_X/campaigns):
+#      name="Leads <CIUDAD> - Andromeda"
+#      objective=OUTCOME_LEADS
+#      status=PAUSED
+#      buying_type=AUCTION
+#      special_ad_categories=[]
+#      is_adset_budget_sharing_enabled=false
+#   2) python3 scripts/create_adset.py --account <X> \
+#        --campaign-id <NEW_CAMP_ID> \
+#        --template templates/andromeda_web_leads.example.yaml \
+#        --name "<CIUDAD> - Andromeda - <YEAR>" \
+#        --daily-budget <BUDGET_MINOR_UNITS>
+#   3) python3 scripts/create_ad.py … \
+#        --image-hash <HASH> ó --video-id <ID> (reusar top performers de la legacy) \
+#        --url-tags 'utm_source=fb&utm_campaign={{campaign.name}}&utm_content={{ad.name}}' \
+#        --cta CONTACT_US
+#   4) Activar nueva + pausar legacy (manual desde Ads Manager). Comparar 7-14d.
+#
+# Ver docs/api-gotchas.md para la lista completa de sorpresas que puede tirar
+# Meta en cada paso.
+
+account: <REEMPLAZAR>   # nombre declarado en accounts.yaml
+
+campaign:
+  objective: OUTCOME_LEADS
+  bid_strategy: LOWEST_COST_WITHOUT_CAP   # va en el adset cuando es ABO
+  special_ad_categories: []
+
+adset:
+  optimization_goal: OFFSITE_CONVERSIONS
+  billing_event: IMPRESSIONS
+  custom_event_type: LEAD                  # evento del Pixel a optimizar
+  attribution_setting: "click_7d_view_1d"
+  bid_strategy: LOWEST_COST_WITHOUT_CAP
+  is_dynamic_creative: false               # permite múltiples ads simples
+
+  targeting:
+    # 1 zona grande para área metropolitana. Si quieres incluir suburbios u otras
+    # ciudades, agregar custom_locations adicionales pero verificar que no
+    # solapen (distancia entre centros > 2 × radio). Ver api-gotchas.md #1.
+    custom_locations:
+      - {lat: 0.0, lng: 0.0, radius_mi: 10, country: XX}    # REEMPLAZAR
+    age_min: 18
+    age_max: 65
+    # NO usar `age_range` constraint adicional — restringe sin justificación.
+    gender: female                         # o "male" o "all"
+    # locales: omitir (Meta locale 6 NO es español, es English-US).
+    # Si quieres filtrar idioma usa 24 (Spanish-MX) o 23 (Spanish-ES).
+    advantage_audience: false              # OFF; suele degradar performance en cuentas con histórico fuerte
+    custom_audiences: []
+    excluded_custom_audiences: []
+
+creative:
+  format: video                            # o "image"
+  default_cta: CONTACT_US                  # NO LEARN_MORE (pasivo, peor CTR)
+  url_tags: "utm_source=fb&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}"

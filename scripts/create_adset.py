@@ -57,11 +57,18 @@ def _build_geo(targeting_cfg, key_inc="geo_locations", key_exc="excluded_geo_loc
       countries: [US, MX]
       custom_locations:
         - {lat: 40.7128, lng: -74.0060, radius_mi: 10, country: US}
+      cities:
+        - {key: "474037", radius_mi: 8}
+
+    NOTA: si pasás `custom_locations` o `cities`, omitimos `countries` del nivel
+    superior (Meta lo interpreta como solapamiento "país + zona dentro" y rechaza
+    el adset con error 1487756). Cada custom_location ya lleva su propio country.
+    Ver docs/api-gotchas.md.
     """
     out = {}
-    if targeting_cfg.get("countries"):
-        out["countries"] = list(targeting_cfg["countries"])
     custom = targeting_cfg.get("custom_locations") or []
+    cities = targeting_cfg.get("cities") or []
+
     if custom:
         rows = []
         for loc in custom:
@@ -78,12 +85,17 @@ def _build_geo(targeting_cfg, key_inc="geo_locations", key_exc="excluded_geo_loc
             })
         if rows:
             out["custom_locations"] = rows
-    if targeting_cfg.get("cities"):
-        # Formato Meta nativo: requiere city `key` (ID interno de Meta).
+
+    if cities:
         out["cities"] = [
             {"key": str(c["key"]), "radius": int(c.get("radius_mi", 10)), "distance_unit": "mile"}
-            for c in targeting_cfg["cities"]
+            for c in cities
         ]
+
+    # Solo agregar 'countries' si NO hay custom_locations ni cities (evita overlap).
+    if targeting_cfg.get("countries") and not custom and not cities:
+        out["countries"] = list(targeting_cfg["countries"])
+
     return out
 
 
@@ -123,8 +135,13 @@ def build_targeting(targeting_cfg):
     if targeting_cfg.get("flexible_spec"):
         spec["flexible_spec"] = list(targeting_cfg["flexible_spec"])
 
-    if targeting_cfg.get("advantage_audience"):
-        spec["targeting_optimization"] = "expansion_all"
+    # advantage_audience: Meta exige declaración explícita (0 o 1) en adsets nuevos.
+    # Si el template no lo declara, default a 0 (off). Ver docs/api-gotchas.md #6.
+    aa_value = targeting_cfg.get("advantage_audience")
+    if aa_value is None:
+        spec["targeting_automation"] = {"advantage_audience": 0}
+    else:
+        spec["targeting_automation"] = {"advantage_audience": 1 if aa_value else 0}
 
     return spec
 
@@ -205,8 +222,16 @@ def build_payload(template, account_cfg, args):
     if attr:
         payload["attribution_spec"] = json.dumps(attr)
 
-    if adset.get("is_dynamic_creative"):
-        payload["is_dynamic_creative"] = True
+    # is_dynamic_creative: campo immutable post-creación. Pasarlo siempre explícito
+    # si el template lo declara (true o false). Default = false (más flexible: permite
+    # múltiples ads por adset). Ver docs/api-gotchas.md #4 y #5.
+    if "is_dynamic_creative" in adset:
+        payload["is_dynamic_creative"] = bool(adset["is_dynamic_creative"])
+
+    # bid_strategy a nivel adset (para ABO). En CBO va en la campaña con campaign budget.
+    # Ver docs/api-gotchas.md #3.
+    if adset.get("bid_strategy"):
+        payload["bid_strategy"] = adset["bid_strategy"].upper()
 
     if adset.get("bid_amount"):
         payload["bid_amount"] = int(adset["bid_amount"])

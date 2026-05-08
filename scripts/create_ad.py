@@ -203,7 +203,7 @@ def _build_basic_asset_feed(video_ids, bodies, titles, descriptions, link_url, c
 def create_creative_with_video_id(
     video_ids, page_id, bodies, titles, cta, link_url, name, ad_account_id,
     descriptions=None, message_extensions=None, placement_customization=False,
-    instagram_user_id=None, page_welcome_message=None,
+    instagram_user_id=None, page_welcome_message=None, url_tags=None,
 ):
     """Crea creative via Graph API directa usando video_id(s) ya procesados.
 
@@ -276,12 +276,88 @@ def create_creative_with_video_id(
             "access_token": access_token,
         }
 
+    if url_tags:
+        payload["url_tags"] = url_tags
+
     response = requests.post(url, data=payload)
 
     if response.status_code != 200:
         sys.stderr.write(f"  Error API ({response.status_code}): {response.text}\n")
         sys.exit(1)
 
+    return response.json().get("id")
+
+
+def create_creative_with_image_hash(
+    image_hashes, page_id, bodies, titles, cta, link_url, name, ad_account_id,
+    descriptions=None, instagram_user_id=None, url_tags=None,
+):
+    """Crea creative reusando image_hash(es) ya en la library del ad account.
+
+    Single hash + 1 body + 1 title → object_story_spec.link_data (no DCO).
+    Multi hash o multi-variante → asset_feed_spec.images (DCO; requiere adset
+    is_dynamic_creative=true). Ver docs/api-gotchas.md #5 y #8.
+    """
+    access_token = get_access_token()
+    url = f"{BASE_URL}/{ad_account_id}/adcreatives"
+
+    object_story_spec = {"page_id": page_id}
+    if instagram_user_id:
+        object_story_spec["instagram_user_id"] = instagram_user_id
+
+    needs_asset_feed = (
+        len(image_hashes) > 1
+        or len(bodies) > 1
+        or len(titles) > 1
+        or (descriptions and len(descriptions) > 1)
+    )
+
+    if not needs_asset_feed:
+        link_data = {
+            "image_hash": image_hashes[0],
+            "message": bodies[0] if bodies else "",
+            "name": titles[0] if titles else "",
+            "link": link_url or "",
+            "call_to_action": {
+                "type": cta.upper(),
+                "value": {"link": link_url} if link_url else {},
+            },
+        }
+        if descriptions:
+            link_data["description"] = descriptions[0]
+        object_story_spec["link_data"] = link_data
+        payload = {
+            "name": name,
+            "object_story_spec": json.dumps(object_story_spec),
+            "access_token": access_token,
+        }
+    else:
+        afs = {
+            "images": [{"hash": h} for h in image_hashes],
+            "bodies": [{"text": b} for b in bodies],
+            "call_to_action_types": [cta.upper()],
+            "ad_formats": ["AUTOMATIC_FORMAT"],
+        }
+        if titles:
+            afs["titles"] = [{"text": t} for t in titles]
+        if descriptions:
+            afs["descriptions"] = [{"text": d} for d in descriptions]
+        if link_url:
+            afs["link_urls"] = [{"website_url": link_url}]
+        payload = {
+            "name": name,
+            "object_story_spec": json.dumps(object_story_spec),
+            "asset_feed_spec": json.dumps(afs),
+            "access_token": access_token,
+        }
+
+    if url_tags:
+        payload["url_tags"] = url_tags
+
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        sys.stderr.write(f"  Error API ({response.status_code}): {response.text}\n")
+        sys.exit(1)
     return response.json().get("id")
 
 
@@ -337,11 +413,13 @@ def main():
     parser.add_argument("--video-url", action="append", default=None, help="URL de video (repetir para DCO)")
     parser.add_argument("--image-file", action="append", default=None, help="Path a imagen local (repetir para DCO)")
     parser.add_argument("--image-url", action="append", default=None, help="URL de imagen (repetir para DCO)")
+    parser.add_argument("--image-hash", action="append", default=None, help="image_hash de imagen ya en la library (repetir para DCO). Ver docs/api-gotchas.md #8.")
     parser.add_argument("--body", action="append", required=True, help="Texto del ad (repetir para variaciones DCO)")
     parser.add_argument("--title", action="append", default=None, help="Título del ad (repetir para variaciones DCO)")
     parser.add_argument("--description", action="append", default=None, help="Description text (repetir para variaciones)")
     parser.add_argument("--cta", default="CONTACT_US", help="Call to action (CONTACT_US, WHATSAPP_MESSAGE, etc)")
     parser.add_argument("--link-url", default=None, help="URL de destino")
+    parser.add_argument("--url-tags", default=None, help="UTMs / url_tags. Soporta macros Meta como {{campaign.name}}, {{ad.name}}. Ej: 'utm_source=fb&utm_campaign={{campaign.name}}&utm_content={{ad.name}}'. Ver docs/api-gotchas.md #9.")
     parser.add_argument("--name", required=True, help="Nombre del ad")
     parser.add_argument("--whatsapp-addon", action="store_true", help="Browser CTA add-on de WhatsApp (asset_feed_spec.message_extensions)")
     parser.add_argument("--placement-customization", action="store_true", help="Replicar patrón Andromeda: asset_customization_rules con feed-square + catch-all vertical (requiere --video-id, máx 2)")
@@ -368,6 +446,7 @@ def main():
     video_urls = args.video_url or []
     image_files = args.image_file or []
     image_urls = args.image_url or []
+    image_hashes = args.image_hash or []
     all_videos = video_files + video_urls
     all_images = image_files + image_urls
     bodies = args.body  # ya es lista por action="append"
@@ -381,11 +460,14 @@ def main():
         # strip our local _comment field if present (Meta no lo necesita)
         welcome_template.pop("_comment", None)
 
-    use_api_direct = bool(video_ids)  # Si hay video_id, usar Graph API directa
+    use_api_direct = bool(video_ids or image_hashes)  # Si hay asset pre-existente, usar Graph API directa
 
-    has_creative = bool(video_ids or all_videos or all_images)
+    has_creative = bool(video_ids or all_videos or all_images or image_hashes)
     if not has_creative:
-        sys.stderr.write("Error: Se requiere al menos uno de --video-id, --video-file, --video-url, --image-file, --image-url\n")
+        sys.stderr.write("Error: Se requiere al menos uno de --video-id, --video-file, --video-url, --image-file, --image-url, --image-hash\n")
+        sys.exit(1)
+    if image_hashes and (video_ids or all_videos or all_images):
+        sys.stderr.write("Error: --image-hash no se mezcla con otros tipos de asset en el mismo ad.\n")
         sys.exit(1)
 
     if args.placement_customization and not video_ids:
@@ -443,7 +525,21 @@ def main():
 
     # 1. Crear creative
     sys.stderr.write("  Creando creative...\n")
-    if use_api_direct:
+    if image_hashes:
+        creative_id = create_creative_with_image_hash(
+            image_hashes=image_hashes,
+            page_id=page_id,
+            bodies=bodies,
+            titles=titles,
+            cta=args.cta,
+            link_url=link_url,
+            name=f"Creative - {args.name}",
+            ad_account_id=acct["ad_account_id"],
+            descriptions=descriptions,
+            instagram_user_id=acct.get("instagram_user_id"),
+            url_tags=args.url_tags,
+        )
+    elif use_api_direct:
         creative_id = create_creative_with_video_id(
             video_ids=video_ids,
             page_id=page_id,
@@ -458,6 +554,7 @@ def main():
             placement_customization=args.placement_customization,
             instagram_user_id=acct.get("instagram_user_id"),
             page_welcome_message=welcome_template,
+            url_tags=args.url_tags,
         )
     else:
         if descriptions or message_extensions or args.placement_customization:
